@@ -1,0 +1,882 @@
+#include <LWiFi.h>
+#define SSID "CSIE-WLAN"
+#define PASSWD "wificsie"
+#define TCP_IP "192.168.208.185"
+#define TCP_PORT 5000
+# define leftpin1 17 
+# define leftpin2 16 
+# define rightpin2 14
+# define rightpin1 15
+# define pin3 8
+# define pin4 9
+#include <string.h>
+int test[40];
+const int r_Pin = 11;//Red led
+const int g_Pin = 12;//Green led
+const int b_Pin = 13;//Blue led
+
+WiFiClient wifiClient;
+static char buf[100];
+static int messageLen;
+
+const int Trig_Pinsr = 6;//trig 腳位
+const int Echo_Pinsr = 7;// echo 腳位
+
+const int Trig_Pins = 2;//trig 腳位
+const int Echo_Pins = 3;// echo 腳位
+int a =1;
+const int Trig_Pinsl = 4;//trig 腳位
+const int Echo_Pinsl = 5;// echo 腳位
+
+
+float get_distance(int trig, int echo){//計算距離
+    float duration;
+    pinMode(trig, OUTPUT);
+    pinMode(echo, INPUT);
+    digitalWrite(trig, HIGH);
+    delayMicroseconds(10);//給予trig 10us TTL pulse,讓模組發射聲波
+    digitalWrite(trig, LOW);
+    duration = pulseIn(echo, HIGH, 5000000);//紀錄echo電位從high到low的時間，就是超音波來回的時間，若5秒內沒收到超音波則回傳0
+    return duration / 29 / 2;// 聲速340m/s ，換算後約每29微秒走一公分，超音波來回所以再除2
+}
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(rightpin1,OUTPUT);
+  pinMode(rightpin2,OUTPUT);
+  pinMode(leftpin1,OUTPUT);
+  pinMode(leftpin2,OUTPUT);
+  pinMode(pin3,OUTPUT);
+  pinMode(pin4,OUTPUT);
+  pinMode(r_Pin, OUTPUT);
+  pinMode(g_Pin, OUTPUT);
+  pinMode(b_Pin, OUTPUT);
+  int status=WL_IDLE_STATUS;
+  while(status!=WL_CONNECTED){
+      status=WiFi.begin(SSID,PASSWD);}
+   wifiClient.connect(TCP_IP,TCP_PORT);
+   Serial.begin(9600);
+   while(!Serial)
+    ;
+    Serial.println(status);
+    delay(1000);
+   wifiClient.write("join blackjack B");  //join <ID> <team>    
+}
+
+void stopp(int i){
+     analogWrite(leftpin1,250);
+     analogWrite(leftpin2,250);
+     analogWrite(rightpin1,250);
+     analogWrite(rightpin2,250);
+     delay(i);
+} 
+
+void try_front(float resultr,float resultl){
+  if(resultr > 800||resultr < 6){
+     analogWrite(leftpin1,250);
+     analogWrite(leftpin2,0);
+     analogWrite(rightpin1,250);
+     analogWrite(rightpin2,0);
+     delay(150);
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,200);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,250);
+     //delay(100); 
+     
+  }
+  else if(resultl > 800||resultl < 6){
+     analogWrite(leftpin1,250);
+     analogWrite(leftpin2,0);
+     analogWrite(rightpin1,250);
+     analogWrite(rightpin2,0);
+     delay(150);  
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,250);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,200);
+     //delay(100);  
+  }
+  else if(resultr > 11.2 && resultr < 25){            //25
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,250);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,210);
+  }
+  
+  else if(resultr >= 10.8 && resultr <= 11.2){
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,250);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,250);
+  }
+  
+  else if(resultr > 0 && resultr < 10.8){
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,210);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,250);
+  } 
+  
+  else if(resultl > 11.2 && resultl < 25){
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,210);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,250);
+  }
+  
+  else if(resultl >= 10.8 && resultl <= 11.2){
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,250);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,250);
+  }
+  
+  else if(resultl > 0 && resultl < 10.8){
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,250);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,210);
+  }
+  else{
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,250);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,250);
+  }
+  
+}
+
+void try_front_no_back(float resultr,float resultl){
+ if(resultr > 11.2 && resultr < 25){            
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,250);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,210);
+  }
+  
+  else if(resultr >= 10.8 && resultr <= 11.2){
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,250);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,250);
+  }
+  
+  else if(resultr > 0 && resultr < 10.8){
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,210);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,250);
+  } 
+  
+  else if(resultl > 11.2 && resultl < 25){
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,210);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,250);
+  }
+  
+  else if(resultl >= 10.8 && resultl <= 11.2){
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,250);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,250);
+  }
+  
+  else if(resultl > 0 && resultl < 10.8){
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,250);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,210);
+  }
+  else{
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,250);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,250);
+  }
+  
+}
+void rturn_left(){
+     analogWrite(leftpin1,250);
+     analogWrite(leftpin2,0);
+     analogWrite(rightpin1,0);
+     analogWrite(rightpin2,250);    
+}
+
+void rturn_right(){
+     analogWrite(leftpin1,0);
+     analogWrite(leftpin2,250);
+     analogWrite(rightpin1,250);
+     analogWrite(rightpin2,0);
+}
+
+
+void loop() {
+  analogWrite(r_Pin,0);
+  analogWrite(g_Pin,0);
+  analogWrite(b_Pin,255);
+  int i = 0;
+    while (wifiClient.available()) {
+        buf[i++] = wifiClient.read();
+        delayMicroseconds(10);
+    }
+    if (i != 0) {
+      buf[i] = '\0';
+      Serial.println(buf);
+    }
+    i = 0;
+    wifiClient.write("position");
+
+  delay(2000);
+  while((strcmp(buf, "position -1 -1") == 0)||(strcmp(buf, "join ok") == 0) ||(strcmp(buf, "") == 0)){  //---
+   i = 0;
+    while (wifiClient.available()) {
+        buf[i++] = wifiClient.read();
+        delayMicroseconds(10);
+    }
+    if (i != 0) {
+      buf[i] = '\0';
+      Serial.println(buf);
+    }
+    i = 0;
+    wifiClient.write("position");
+
+   digitalWrite(pin3,HIGH);       
+   digitalWrite(pin4,HIGH);
+   float result= get_distance( Trig_Pins, Echo_Pins);
+   //Serial.print(result);
+   //Serial.println("cm front");
+
+   float resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+   //Serial.print(resultr);
+   //Serial.println("cm right");
+
+   float resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+   //Serial.print(resultl);
+   //Serial.println("cm left");
+  
+  int l = 350;
+  int r = 330;
+  int flag = 1;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+while(1){
+
+  if(flag == 1){
+  while(result > 9 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  Serial.print(result);
+  Serial.println("cm front"); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  Serial.print(resultr);
+  Serial.println("cm right");
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  Serial.print(resultl);
+  Serial.println("cm left");
+  }
+  stopp(200);
+  
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  
+  while(resultr < 30){
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  try_front(resultr,resultl);
+  delay(100);
+  stopp(100);
+  }
+
+  for(int y = 0;y < 13;y++){
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  try_front_no_back(resultr,resultl);
+  delay(80);
+  stopp(100);
+  }  
+
+  while(resultr > 30 || resultl < 30){
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  try_front_no_back(resultr,resultl);
+  delay(80);
+  stopp(100);
+  }
+
+  for(int y = 0;y < 3;y++){
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  try_front_no_back(resultr,resultl);
+  delay(80);
+  stopp(100);
+  }  
+
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(result > 10){
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  try_front(resultr,resultl);
+  delay(80);
+  stopp(100);
+  }
+
+  rturn_right();
+  delay(r);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(result > 10){
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  try_front(resultr,resultl);
+  delay(80);
+  stopp(100);
+  }
+
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(result > 10){
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  try_front(resultr,resultl);
+  delay(80);
+  stopp(100);
+  }
+  
+  flag = 2;
+  stopp(1000);
+  rturn_left();
+  delay(l);
+  stopp(200);
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+ 
+  for(int h = 0;h < 10;h++){
+      wifiClient.write("send-to BJ4 hihi");
+      delay(1000);
+    }
+    int i = 0;
+    while (wifiClient.available()) {
+        buf[i++] = wifiClient.read();
+        delayMicroseconds(10);
+    }
+    if (i != 0) {
+      buf[i] = '\0';
+      Serial.println(buf);
+    }
+    i = 0;
+    wifiClient.write("position");
+    while((buf[28] != 'G') || (buf[29] != 'O')){
+       i = 0;
+    while (wifiClient.available()) {
+        buf[i++] = wifiClient.read();
+        delayMicroseconds(10);
+    }
+    if (i != 0) {
+      buf[i] = '\0';
+      Serial.println(buf);
+    }
+    i = 0;
+    wifiClient.write("position");
+      stopp(100);
+    }   
+  }
+  
+  //2
+  if(flag == 2){
+  while(result > 8 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  Serial.print(result);
+  Serial.println("cm front"); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  Serial.print(resultr);
+  Serial.println("cm right");
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  Serial.print(resultl);
+  Serial.println("cm left");
+  }
+  stopp(200);
+
+  rturn_right();
+  delay(r);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  
+  while(result > 10 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+  stopp(200);
+
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(result > 8 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+  stopp(200);
+
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(resultr < 30 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+  stopp(200);
+
+  for(int y = 0;y < 3;y++){
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  try_front_no_back(resultr,resultl);
+  delay(80);
+  stopp(100);
+  } 
+
+  rturn_right();
+  delay(r);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  for(int y = 0;y < 11;y++){
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  try_front_no_back(resultr,resultl);
+  delay(80);
+  stopp(100);
+  } 
+  
+  while(resultl < 30 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+  stopp(200);
+
+  for(int y = 0;y < 3;y++){
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  try_front_no_back(resultr,resultl);
+  delay(80);
+  stopp(100);
+  } 
+
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(result > 10 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+  stopp(200);
+
+  rturn_right();
+  delay(r);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(result > 10 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+  stopp(200);
+
+  flag = 3;
+  stopp(1000);
+  rturn_left();
+  delay(l);
+  stopp(200);
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  for(int h = 0;h < 10;h++){
+      wifiClient.write("send-to BJ4 hihi");
+      delay(1000);
+    }
+    int i = 0;
+    while (wifiClient.available()) {
+        buf[i++] = wifiClient.read();
+        delayMicroseconds(10);
+    }
+    if (i != 0) {
+      buf[i] = '\0';
+      Serial.println(buf);
+    }
+    i = 0;
+    wifiClient.write("position");
+    while((buf[28] != 'G') || (buf[29] != 'O')){
+       i = 0;
+    while (wifiClient.available()) {
+        buf[i++] = wifiClient.read();
+        delayMicroseconds(10);
+    }
+    if (i != 0) {
+      buf[i] = '\0';
+      Serial.println(buf);
+    }
+    i = 0;
+    wifiClient.write("position");
+      stopp(100);
+    } 
+  }
+  //3
+  if(flag = 3){
+
+  for(int y = 0;y < 16;y++){
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  try_front_no_back(resultr,resultl);
+  delay(80);
+  stopp(100);
+  } 
+  try_front_no_back(resultr,resultl);
+  delay(60);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(result > 10 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+   }
+   
+  rturn_right();
+  delay(r);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(result > 10 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+  
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(result > 10 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+  
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(result > 10 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+
+  flag = 4;
+  stopp(1000);
+  rturn_left();
+  delay(l);
+  stopp(200);
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  for(int h = 0;h < 10;h++){
+      wifiClient.write("send-to BJ4 hihi");
+      delay(1000);
+    }
+    int i = 0;
+    while (wifiClient.available()) {
+        buf[i++] = wifiClient.read();
+        delayMicroseconds(10);
+    }
+    if (i != 0) {
+      buf[i] = '\0';
+      Serial.println(buf);
+    }
+    i = 0;
+    wifiClient.write("position");
+    while((buf[28] != 'G') || (buf[29] != 'O')){
+       i = 0;
+    while (wifiClient.available()) {
+        buf[i++] = wifiClient.read();
+        delayMicroseconds(10);
+    }
+    if (i != 0) {
+      buf[i] = '\0';
+      Serial.println(buf);
+    }
+    i = 0;
+    wifiClient.write("position");
+      stopp(100);
+    }
+  }
+  //4 
+  if(flag == 4){
+
+  while(result > 10 ){
+  try_front(resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+
+  rturn_right();
+  delay(r);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(result > 10 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+
+  rturn_right();
+  delay(r);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  
+  while(result > 10 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  for(int y = 0;y < 7;y++){
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  try_front_no_back(resultr,resultl);
+  delay(80);
+  stopp(100);
+  } 
+
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(result > 10 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+  while(result > 10 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+
+  rturn_right();
+  delay(r);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins);
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);  
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  
+  while(result > 10 ){
+  try_front( resultr, resultl);
+  delay(100);
+  stopp(100);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+  }
+  flag = 1;
+  stopp(1000);
+  rturn_left();
+  delay(l);
+  stopp(200);
+  rturn_left();
+  delay(l);
+  stopp(200);
+  result= get_distance( Trig_Pins, Echo_Pins); 
+  resultr= get_distance( Trig_Pinsr, Echo_Pinsr);
+  resultl= get_distance( Trig_Pinsl, Echo_Pinsl);
+
+
+  for(int h = 0;h < 10;h++){
+      wifiClient.write("send-to BJ4 hihi");
+      delay(1000);
+    }
+    int i = 0;
+    while (wifiClient.available()) {
+        buf[i++] = wifiClient.read();
+        delayMicroseconds(10);
+    }
+    if (i != 0) {
+      buf[i] = '\0';
+      Serial.println(buf);
+    }
+    i = 0;
+    wifiClient.write("position");
+    while((buf[28] != 'G') || (buf[29] != 'O')){
+       i = 0;
+    while (wifiClient.available()) {
+        buf[i++] = wifiClient.read();
+        delayMicroseconds(10);
+    }
+    if (i != 0) {
+      buf[i] = '\0';
+      Serial.println(buf);
+    }
+    i = 0;
+    wifiClient.write("position");
+      stopp(100);
+    }
+  }
+}
+
+}
+}
